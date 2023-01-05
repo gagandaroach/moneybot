@@ -4,6 +4,7 @@ import yfinance as yf
 from datetime import datetime
 
 import pandas as pd
+from pandas_datareader.data import DataReader
 
 
 def getLastYearsStocks(stock_tag):
@@ -11,12 +12,14 @@ def getLastYearsStocks(stock_tag):
     start = datetime(end.year - 1, end.month, end.day)
     return yf.download(stock_tag, start, end)
 
-stock_list = ['AAPL', 'GOOG', 'MSFT', 'AMZN', 'TSLA']
-stocks = [getLastYearsStocks(stock) for stock in stock_list]
-# print(stocks)
-stocks_dict = {}
-for tag, stock in zip(stock_list, stocks):
-    stocks_dict[tag] = stock
+STOCKS_LIST = ['AAPL', 'GOOG', 'MSFT', 'AMZN', 'TSLA']
 
-df = pd.concat(stocks_dict, axis=0)
-print(df.tail(10))
+def getStocksDF(stocks_list=STOCKS_LIST):
+    stocks = [getLastYearsStocks(stock) for stock in STOCKS_LIST]
+    # print(stocks)
+    stocks_dict = {}
+    for tag, stock in zip(STOCKS_LIST, stocks):
+        stocks_dict[tag] = stock
+
+    df = pd.concat(stocks_dict, axis=0)
+    return df
