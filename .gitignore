@@ -1,1 +1,6 @@
-__pycache__
+__pycache__/
+*.pyc
+*.pth
+training_curves.png
+best_stock_lstm.pth
+.vscode/
