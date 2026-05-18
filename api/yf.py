@@ -1,5 +1,3 @@
-
-
 import yfinance as yf
 from datetime import datetime
 
@@ -12,14 +10,16 @@ def getLastYearsStocks(stock_tag):
     start = datetime(end.year - 1, end.month, end.day)
     return yf.download(stock_tag, start, end)
 
+
 STOCKS_LIST = ['AAPL', 'GOOG', 'MSFT', 'AMZN', 'TSLA']
 
+
 def getStocksDF(stocks_list=STOCKS_LIST):
-    stocks = [getLastYearsStocks(stock) for stock in STOCKS_LIST]
+    stocks = [getLastYearsStocks(stock) for stock in stocks_list]
     # print(stocks)
     stocks_dict = {}
-    for tag, stock in zip(STOCKS_LIST, stocks):
+    for tag, stock in zip(stocks_list, stocks):
         stocks_dict[tag] = stock
 
-    df = pd.concat(stocks_dict, axis=0)
+    df = pd.concat(stocks_dict, axis=1)
     return df

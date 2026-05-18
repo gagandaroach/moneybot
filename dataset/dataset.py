@@ -29,28 +29,62 @@ class StocksDataset(Dataset):
         
         # Default to using Close price for prediction if not specified
         if target_column is None:
-            self.target_column = ('Close', STOCKS_LIST[0])  # Default to first stock's Close
+            self.target_column = ('AAPL', 'Close')  # Format: (Ticker, Price)
         else:
             self.target_column = target_column
             
         # Default to using OHLC (excluding Volume) for features if not specified
         if feature_columns is None:
             # Use OHLC (Open, High, Low, Close) for all stocks
+            # Format: (Ticker, Price) for each column
             self.feature_columns = []
             for stock in STOCKS_LIST:
-                self.feature_columns.append(('Open', stock))
-                self.feature_columns.append(('High', stock))
-                self.feature_columns.append(('Low', stock))
-                self.feature_columns.append(('Close', stock))
+                self.feature_columns.append((stock, 'Open'))
+                self.feature_columns.append((stock, 'High'))
+                self.feature_columns.append((stock, 'Low'))
+                self.feature_columns.append((stock, 'Close'))
         else:
             self.feature_columns = feature_columns
             
         # Load and prepare data
-        self.data = getStocksDF()
+        raw_data = getStocksDF()
+        self.data = self._prepare_dataframe(raw_data)
+        
         self.prepare_data()
         
         # Split into train/val
         self.split_data()
+        
+    def _prepare_dataframe(self, df):
+        """
+        Convert the 3-level column structure to 2-level by removing redundant level.
+        
+        Original structure from getStocksDF with axis=1:
+        - Level 0: Ticker (e.g., 'AAPL', 'GOOG', ...)
+        - Level 1: Price (e.g., 'Close', 'High', ...)
+        - Level 2: Ticker (e.g., 'AAPL', 'GOOG', ...) - duplicate of level 0
+        
+        Returns:
+            DataFrame with 2-level columns: (Ticker, Price)
+        """
+        if hasattr(df.columns, 'nlevels') and df.columns.nlevels >= 3:
+            # Extract the three levels
+            level0 = df.columns.get_level_values(0)  # First ticker level
+            level1 = df.columns.get_level_values(1)  # Price level
+            level2 = df.columns.get_level_values(2)  # Second ticker level
+            
+            # Verify that level 0 and level 2 are identical (they should be)
+            # Then create a new 2-level MultiIndex using level 0 and level 1
+            new_columns = pd.MultiIndex.from_arrays([level0, level1], 
+                                                  names=[df.columns.names[0], df.columns.names[1]])
+            
+            # Create a copy of the data with the new column structure
+            df_copy = df.copy()
+            df_copy.columns = new_columns
+            return df_copy
+        else:
+            # If it's not the expected 3-level structure, return as-is
+            return df
         
     def prepare_data(self):
         """Prepare the data for time series prediction."""
@@ -109,5 +143,3 @@ class StocksDataset(Dataset):
     def get_scalers(self):
         """Return the scalers used for normalization."""
         return self.feature_scaler, self.target_scaler
-
-    
